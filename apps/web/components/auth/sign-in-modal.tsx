@@ -29,6 +29,7 @@ export function SignInModal({
   readonly open: boolean;
 }) {
   const usesPassword = authMode === "password";
+  const usesVercel = authMode === "vercel";
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
@@ -42,17 +43,23 @@ export function SignInModal({
             )}
           </div>
           <DialogTitle>
-            {usesPassword ? "Enter chat password" : "Sign up or in to get started"}
+            {usesPassword
+              ? "Enter chat password"
+              : usesVercel
+                ? "Sign up or in to get started"
+                : "Chat setup required"}
           </DialogTitle>
           <DialogDescription>
             {usesPassword
               ? "Use the password configured by the person who deployed this agent."
-              : "Connect your Vercel account to send messages and save sessions."}
+              : usesVercel
+                ? "Connect your Vercel account to send messages and save sessions."
+                : "Configure EVE_CHAT_PASSWORD in your project environment variables, then redeploy to enable password sign-in."}
           </DialogDescription>
         </DialogHeader>
         {usesPassword ? (
           <PasswordSignInForm callbackPath={callbackPath} onBeforeSignIn={onBeforeSignIn} />
-        ) : (
+        ) : usesVercel ? (
           <SignInButton
             callbackPath={callbackPath}
             className="h-11 w-full"
@@ -62,7 +69,7 @@ export function SignInModal({
           >
             Continue with Vercel
           </SignInButton>
-        )}
+        ) : null}
       </DialogContent>
     </Dialog>
   );
