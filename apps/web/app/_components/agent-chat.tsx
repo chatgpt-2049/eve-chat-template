@@ -1472,6 +1472,7 @@ function usePendingUserMessage() {
 }
 
 const CONNECTION_LABELS = {
+  etherscan: "Etherscan",
   linear: "Linear",
   notion: "Notion",
   sentry: "Sentry",

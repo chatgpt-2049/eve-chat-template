@@ -339,3 +339,14 @@ If Notion tool calls fail, confirm that `NOTION_CONNECTOR` is set in Vercel, the
 - [System environment variables](https://vercel.com/docs/environment-variables/system-environment-variables)
 - [Sign in with Vercel prerequisites](https://vercel.com/docs/sign-in-with-vercel/getting-started#prerequisites)
 - [Sign in with Vercel scopes](https://vercel.com/docs/sign-in-with-vercel/scopes-and-permissions)
+
+## Etherscan MCP
+
+The `etherscan` connection uses `https://mcp.etherscan.io/mcp` directly from the
+server. Set `ETHERSCAN_API_KEY` to the raw API key (without `Bearer `) in the
+project environment variables, then redeploy. The SDK adds the Bearer header.
+Never use a `NEXT_PUBLIC_` variable for this credential or commit the key.
+
+Enable Etherscan in the chat Connections menu. All authenticated users share
+the app's key and its API quota. Missing keys fail closed. The desktop JSON
+template is independent and is not loaded by the web runtime.
