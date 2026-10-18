@@ -20,6 +20,7 @@ type ConnectionItem = {
 };
 
 const CONNECTION_ITEMS: readonly ConnectionItem[] = [
+  { key: "etherscan", label: "Etherscan", Icon: HammerIcon },
   { key: "notion", label: "Notion", Icon: NotionIcon },
   { key: "linear", label: "Linear", Icon: LinearIcon },
   { key: "sentry", label: "Sentry", Icon: SentryIcon },

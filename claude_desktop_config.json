@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "etherscan": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.etherscan.io/mcp",
+        "--header",
+        "Authorization:${AUTH_TOKEN}"
+      ],
+      "env": {
+        "AUTH_TOKEN": "Bearer YourApiKey"
+      }
+    }
+  }
+}

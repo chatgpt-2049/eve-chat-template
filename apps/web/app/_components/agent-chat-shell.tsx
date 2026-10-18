@@ -62,6 +62,7 @@ export function AgentChatShell({
   const [setupStatusState, setSetupStatusState] = useState(setupStatus);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [enabledConnections, setEnabledConnections] = useState<EnabledConnections>({
+    etherscan: true,
     linear: true,
     notion: true,
     sentry: true,
