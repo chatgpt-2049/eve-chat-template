@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowUpIcon, Loader2Icon, SquareIcon } from "lucide-react";
+import { ArrowUpIcon, Loader2Icon, SquareIcon, PaperclipIcon } from "lucide-react";
 import {
   useCallback,
   useEffect,
   useId,
   useRef,
+  useState,
   type FormEvent,
   type KeyboardEvent,
   type ReactNode,
@@ -43,9 +44,12 @@ export function ChatComposer({
   readonly placeholder?: string;
   readonly value: string;
 }) {
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const composerId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const textareaDisabled = disabled || isBusy || isPreparing;
+  const textareaDisabled = disabled || isBusy || isPreparing || isImporting;
   const trimmedValue = value.trim();
   const isOverMaxLength = getChatMessageLength(trimmedValue) > maxLength;
 
@@ -63,12 +67,12 @@ export function ChatComposer({
 
   const submitValue = useCallback(() => {
     const text = value.trim();
-    if (!text || disabled || isBusy || isPreparing || getChatMessageLength(text) > maxLength) {
+    if (!text || disabled || isBusy || isPreparing || isImporting || getChatMessageLength(text) > maxLength) {
       return;
     }
 
     void onSubmit(text);
-  }, [disabled, isBusy, isPreparing, maxLength, onSubmit, value]);
+  }, [disabled, isBusy, isPreparing, isImporting, maxLength, onSubmit, value]);
 
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -87,6 +91,37 @@ export function ChatComposer({
     },
     [submitValue],
   );
+
+  async function importFiles(files: FileList | null) {
+    if (!files?.length) return;
+    setImportError(null);
+    setIsImporting(true);
+    try {
+      const selected = Array.from(files);
+      if (selected.length > 10 || selected.reduce((sum, f) => sum + f.size, 0) > 256 * 1024) {
+        throw new Error("Select up to 10 text files, totaling at most 256 KB.");
+      }
+      const parts: string[] = [];
+      for (const file of selected) {
+        if (!/\.(txt|md|mdx|csv|json|js|jsx|ts|tsx|py|html|css|xml|yaml|yml|sql|sh|go|rs|java|c|cpp|h|log)$/i.test(file.name)) {
+          throw new Error("Only code and text files are supported here. PDF and images are not supported yet.");
+        }
+        const content = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer());
+        if (content.includes("\0")) throw new Error("Binary files cannot be imported as text.");
+        parts.push(`File: ${file.name}\n${content}\nEnd file: ${file.name}`);
+      }
+      const next = [value, ...parts].filter(Boolean).join("\n\n");
+      if (getChatMessageLength(next) > maxLength) {
+        throw new Error(`Imported content exceeds the ${maxLength}-character message limit. Select smaller files.`);
+      }
+      onChange(next);
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : "Unable to read files. Try UTF-8 text files.");
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   const form = (
     <form
@@ -114,8 +149,30 @@ export function ChatComposer({
         rows={2}
         value={value}
       />
+      {importError ? <p role="alert" className="px-3 text-sm text-destructive">{importError}</p> : null}
+      {isImporting ? <p role="status" className="px-3 text-sm">Reading files…</p> : null}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept=".txt,.md,.mdx,.csv,.json,.js,.jsx,.ts,.tsx,.py,.html,.css,.xml,.yaml,.yml,.sql,.sh,.go,.rs,.java,.c,.cpp,.h,.log"
+        className="hidden"
+        aria-label="Choose code or text files"
+        onChange={(event) => void importFiles(event.target.files)}
+      />
       <div className="flex min-h-9 items-center justify-between gap-2 px-3 pt-1 pb-2 sm:gap-3 sm:px-4">
         <div className="-ml-2 flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label="Import code or text files"
+            title="Import code or text files"
+            disabled={textareaDisabled}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <PaperclipIcon className="size-4" />
+          </Button>
           {footerStart ?? <span className="block h-8" />}
         </div>
         <div className="flex shrink-0 items-center">
@@ -143,7 +200,7 @@ export function ChatComposer({
             <Button
               aria-label="Send message"
               className="size-6 cursor-pointer rounded-md bg-foreground text-background hover:bg-foreground/90 disabled:cursor-not-allowed disabled:pointer-events-auto disabled:opacity-30"
-              disabled={disabled || trimmedValue.length === 0 || isOverMaxLength}
+              disabled={textareaDisabled || trimmedValue.length === 0 || isOverMaxLength}
               size="icon-xs"
               type="submit"
             >
